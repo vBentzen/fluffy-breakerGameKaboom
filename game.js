@@ -50,6 +50,16 @@ loadSpriteAtlas("https://raw.githubusercontent.com/vBentzen/fluffy-breakerGameKa
         height: 9,
     }
 });
+
+// Load pwerup assets
+loadSpriteAtlas("https://raw.githubusercontent.com/vBentzen/fluffy-breakerGameKaboom/main/sprites/breakout_custom.png", {
+    "extraball": {
+        x: 64,
+        y: 0,
+        width: 16,
+        height: 16,
+    },
+});
 loadFont("breakout", "https://raw.githubusercontent.com/vBentzen/fluffy-breakerGameKaboom/main/sprites/breakout_font.png", 6, 8, { chars: "ABCDEFGHIJKLMNOPQRSTUVWXYZ  0123456789:!'" });
 
 
@@ -168,6 +178,8 @@ const LEVELOPT = {
 
 }
 
+let ballnumber = 1;
+
 scene("game", ({ levelIndex, score, lives}) => {
     addLevel(LEVELS[levelIndex], LEVELOPT);
 
@@ -199,7 +211,7 @@ scene("game", ({ levelIndex, score, lives}) => {
         }
 
         // fall off screen
-        if (ball.pos.y > height()) {
+        if (ball.pos.y > height() && ballnumber === 1) {
             lives -= 1;
             if (lives <= 0) {
                 go("lose", { score: score});
@@ -209,10 +221,35 @@ scene("game", ({ levelIndex, score, lives}) => {
                 ball.pos.y = height()/2;
             }
         }
+        else if (ball.pos.y > height() && ballnumber >= 2) {
+            ball.destroy();
+            ballnumber --;
+        }
+
 
         // move ball
         ball.move(ball.hspeed, ball.vspeed);
     });
+
+
+
+    function spawnball() {
+
+        add([
+            sprite("ball"),
+            pos(100,200),
+            "ball",
+            area(),
+            {
+                hspeed: 100,
+                vspeed: 50
+            }
+        ]);
+
+        ballnumber++;
+    }
+
+
 
     //collisions
     onCollide("ball", "bouncy", (ball, bouncy) => {
@@ -243,7 +280,7 @@ scene("game", ({ levelIndex, score, lives}) => {
         }
 
         // powerups
-        if (chance(1)) {// extra life
+        if (chance(0.005)) {// extra life
             add([
                 sprite("heart"),
                 pos(block.pos),
@@ -258,7 +295,27 @@ scene("game", ({ levelIndex, score, lives}) => {
                 }
             ]);
         }
+
+
+
+        if (chance(0.95)) {// extra ball
+            add([
+                sprite("extraball"),
+                pos(block.pos),
+                area(),
+                origin("center"),
+                scale(2),
+                cleanup(),
+                "powerup",
+                {
+                    speed: 80,
+                    effect() { spawnball() },
+                }
+            ]);
+        }
     });
+
+
 
     // powerups
     onUpdate("powerup", (powerup) => {
